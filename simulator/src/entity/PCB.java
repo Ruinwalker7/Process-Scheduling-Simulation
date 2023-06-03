@@ -5,25 +5,56 @@ import java.util.Date;
 public class PCB {
     private int PID;
 
-    private int state;
+    private ProcessState state;
+
+
 
     private String statename;
     private int memory;
 
-    private int needTime;
-
+    private long needTime;
+    private long remainTime;
     private Date createTime;
 
     private Date endTime;
 
+    private int start;
+    private int end;
+
+    public int getStart() {
+        return start;
+    }
+
+    public void setStart(int start) {
+        this.start = start;
+    }
+
+    public int getEnd() {
+        return end;
+    }
+
+    public void setEnd(int end) {
+        this.end = end;
+    }
+    public long getRemainTime() {
+        return remainTime;
+    }
+
+    public void setRemainTime(long remainTime) {
+        this.remainTime = remainTime;
+    }
     private static int nowPID = 0;
 
-    public PCB(int memory, int needTime) {
+    public PCB(int memory, long needTime) {
         PID = ++nowPID;
+        this.state = ProcessState.CREATE;
         this.statename = "CREATE";
         this.memory = memory;
         this.needTime = needTime;
         createTime = new Date();
+        this.start = 0;
+        this.end = 0;
+        this.remainTime = needTime;
     }
 
     public int getPID() {
@@ -34,22 +65,26 @@ public class PCB {
         this.PID = PID;
     }
 
-    public int getState() {
+    public ProcessState getState() {
         return state;
     }
 
-    public void setState(int state) {
+    public void setState(ProcessState state) {
         this.state = state;
         switch (state){
-            case 0:
+            case CREATE:
                 statename = "CREATE";
-            case 1:
+                break;
+            case STOP:
                 statename = "STOP";
-            case 2:
+                break;
+            case READY:
                 statename = "READY";
-            case 3:
+                break;
+            case BLOCK:
                 statename = "BLOCK";
-            case 4:
+                break;
+            case RUNNING:
                 statename = "RUNNING";
             default:
                 break;
@@ -65,7 +100,7 @@ public class PCB {
         this.memory = memory;
     }
 
-    public int getNeedTime() {
+    public long getNeedTime() {
         return needTime;
     }
 
@@ -91,11 +126,21 @@ public class PCB {
 
     @Override
     public String toString() {
+        if(end!=0)
+            return "PID = " + PID +
+                    "\nstate = " + state +
+                    "\nstatename = " + statename  +
+                    "\nmemory = " + memory +
+                    "\nneedTime = " + needTime +
+                    "\ncreateTime = " + createTime.getTime() +
+                    "\nendTime = " + endTime.getTime() +"\nstart = "+ start+"\nend = "+end+"\n";
+        else
         return "PID = " + PID +
+                "\nstate = " + state +
                 "\nstatename = " + statename  +
                 "\nmemory = " + memory +
                 "\nneedTime = " + needTime +
-                "\ncreateTime = " + createTime +
-                "\nendTime = " + endTime;
+                "\ncreateTime = " + createTime.getTime() +
+                "\nendTime = " + endTime.getTime();
     }
 }

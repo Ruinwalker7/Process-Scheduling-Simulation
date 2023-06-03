@@ -1,14 +1,16 @@
 package ui;
 
-import com.sun.org.apache.bcel.internal.generic.FALOAD;
-import entity.DataBuffers;
-import entity.MyCellRenderer;
-import entity.PCB;
-import entity.PCBListModel;
+import Threads.MemoryAllocation;
+import Threads.RunningProcess;
+import entity.*;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 public class mainFrame extends JFrame {
     /** 进程列表 */
@@ -23,6 +25,11 @@ public class mainFrame extends JFrame {
     public mainFrame(){
         init();
         setVisible(true);
+
+        new MemoryAllocation().start();
+        new RunningProcess().start();
+
+
     }
 
     public void init(){
@@ -36,6 +43,11 @@ public class mainFrame extends JFrame {
         this.setLocation((x - this.getWidth()) / 2, (y-this.getHeight())/ 2);
 
         memory  = new int[DataBuffers.memorySize];
+        DataBuffers.readyQueue = new LinkedBlockingQueue<>();
+        DataBuffers.memoryList = new ArrayList<>();
+        DataBuffers.memoryList.add(new Memory(0,DataBuffers.memorySize-1,DataBuffers.memorySize,false));
+        DataBuffers.createQueue = new LinkedBlockingQueue<>();
+
 
         Font font = new Font("黑体",0,20);
 
@@ -56,7 +68,7 @@ public class mainFrame extends JFrame {
         cmd.setLayout(new FlowLayout());
 
         Label label = new Label();
-        label.setText("指令：");
+        label.setText("Command: ");
         label.setFont(font);
 
 
@@ -87,14 +99,6 @@ public class mainFrame extends JFrame {
         resultArea.setFont(font);
 
 
-////
-//        JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-//                cmdPane, pcbPane);
-//        splitPane.setDividerLocation(200);
-//        splitPane.setDividerSize(10);
-//        splitPane.setEnabled(false);
-//        splitPane.setOneTouchExpandable(false);
-
         //pcb面板
         pcbList = new JList<PCB>();
         DataBuffers.pcbListModel = new PCBListModel();
@@ -121,15 +125,10 @@ public class mainFrame extends JFrame {
         splitPane.setDividerLocation(500);
         splitPane.setDividerSize(20);
         splitPane.setEnabled(false);
-//        splitPane.setOneTouchExpandable(false);
 
-//        this.add(cmdPane,BorderLayout.WEST);
-//        this.add(pcbPane,BorderLayout.CENTER);
         this.add(splitPane,BorderLayout.CENTER);
         this.add(showPane,BorderLayout.EAST);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-
 
         //发送文本消息
         cmdField.addKeyListener(new KeyAdapter(){
@@ -147,6 +146,8 @@ public class mainFrame extends JFrame {
                 pcbText.setText(((PCB)pcbList.getSelectedValue()).toString());
             }
         });
+
+
     }
 
     public void enterCommand(){
@@ -197,6 +198,7 @@ public class mainFrame extends JFrame {
         }
         PCB pcb = new PCB(m,t);
         DataBuffers.pcbListModel.addElement(pcb);
+        DataBuffers.createQueue.add(pcb);
         resultArea.setText("进程创建成功!\n"+pcb.toString());
     }
 }
