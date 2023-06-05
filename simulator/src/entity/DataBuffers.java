@@ -1,5 +1,8 @@
 package entity;
 
+import java.util.ArrayList;
+import java.util.Queue;
+
 /** 静态变量类*/
 public class DataBuffers {
     /** 内存大小*/
@@ -11,6 +14,9 @@ public class DataBuffers {
     /** PCBJList的Model */
     public static PCBListModel pcbListModel;
 
+    public static Queue<PCB> createQueue;
+    public static Queue<PCB> readyQueue;
+    public static ArrayList<Memory> memoryList;
     static{
         memorySize=64;
         dispatch = "FCFS";
