@@ -4,43 +4,55 @@ package ui;
 //import common.entity.Line;
 //import server.DataBuffer;
 
+import entity.DataBuffers;
+import entity.Memory;
+
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Rectangle2D;
 
-public class WhiteBroad extends JPanel implements Runnable {
+public class WhiteBroad extends JPanel  {
 
     private static final long serialVersionUID = 1141241251L;
-
-    public void run()   //进程run()方法重写
-    {
-        this.setBackground(new Color(255,255,255));
-        Graphics g=this.getGraphics();   //Graphics对象 g的获取
-
-//        DrawListener dl = new DrawListener(g,this);// 实例化DrawListener类的对象
-//        this.addMouseListener(dl);// 为窗体添加鼠标事件监听方法
-//        this.addMouseMotionListener(dl);// 为窗体添加鼠标移动事件监听方法
+    Font f;
+    WhiteBroad(){
+        f=new Font(null,Font.PLAIN,25);
     }
 
+    public void paint(Graphics g) {
+        super.paint(g);
 
-//    public void paint(Graphics g) {
-//        super.paint(g);
-//
-//        ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING , RenderingHints.VALUE_ANTIALIAS_ON); //清除锯齿
-//
-//        Graphics2D g2 = (Graphics2D)g;
-//
-//        for(int i = 0; i< DataBuffer.LineList.size(); i++){ // 重新绘制
-//            Line line = DataBuffer.LineList.get(i);
-//            g2.setColor(line.getColor());
-//            g2.setStroke(new BasicStroke(line.getF()));
-//            g2.draw(line.getLine2D());
-//        }
-//
-//        for(int i = 0; i< DataBuffer.ellipseList.size(); i++){ // 重新绘制
-//            Ellipse ellipse = DataBuffer.ellipseList.get(i);
-//            g2.setStroke(new BasicStroke(ellipse.getF()));
-//            g2.setColor(ellipse.getColor());
-//            g2.draw(ellipse.getEllipse2D());
-//        }
+        int height = this.getHeight();
+        int weight = this.getWidth();
+
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setFont(f);
+
+        int x = weight/5;
+        int y = height/20;
+        int fy = (int)height/DataBuffers.memorySize*5/6;
+
+
+        for(int i = 0;i< DataBuffers.memoryList.size();i++){
+            Memory memory = DataBuffers.memoryList.get(i);
+            if(!memory.isUse()){
+                g2.setColor(new Color(140,200,145));
+            }
+            else
+                g2.setColor(new Color(200,100,100));
+
+            g2.fillRect(x,y,x*3,fy*memory.getSize());
+            g2.setColor(new Color(0,0,0));
+            g2.drawRect(x,y,x*3,fy*memory.getSize());
+
+            if(memory.getPid()!=0)
+                g2.drawString("PID: "+String.valueOf(memory.getPid())+" "+String.valueOf(memory.getSize())+"(kb)",weight/3,y+fy*memory.getSize()/2);
+            else
+                g2.drawString(String.valueOf(memory.getSize())+"(kb)",weight/5*2,y+fy*memory.getSize()/2);
+
+            y+=fy*memory.getSize();
+        }
+
+    }
 
 }

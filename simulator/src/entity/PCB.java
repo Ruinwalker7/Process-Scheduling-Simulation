@@ -1,23 +1,19 @@
 package entity;
 
+import ui.mainFrame;
+
 import java.util.Date;
 
 public class PCB {
     private int PID;
-
     private ProcessState state;
-
-
-
     private String statename;
-    private int memory;
-
+    private int memorySize;
     private long needTime;
     private long remainTime;
     private Date createTime;
-
     private Date endTime;
-
+    private Memory memory;
     private int start;
     private int end;
 
@@ -45,11 +41,11 @@ public class PCB {
     }
     private static int nowPID = 0;
 
-    public PCB(int memory, long needTime) {
+    public PCB(int memorySize, long needTime) {
         PID = ++nowPID;
         this.state = ProcessState.CREATE;
         this.statename = "CREATE";
-        this.memory = memory;
+        this.memorySize = memorySize;
         this.needTime = needTime;
         createTime = new Date();
         this.start = 0;
@@ -86,18 +82,25 @@ public class PCB {
                 break;
             case RUNNING:
                 statename = "RUNNING";
+                break;
+            case FINISH:
+                statename = "FINISH";
             default:
                 break;
         }
-
+        mainFrame.pcbList.repaint();
     }
 
-    public int getMemory() {
+    public int getMemorySize() {
+        return memorySize;
+    }
+
+    public void setMemorySize(int memorySize) {
+        this.memorySize = memorySize;
+    }
+
+    public Memory getMemory() {
         return memory;
-    }
-
-    public void setMemory(int memory) {
-        this.memory = memory;
     }
 
     public long getNeedTime() {
@@ -124,23 +127,33 @@ public class PCB {
         this.endTime = endTime;
     }
 
+    public void setMemory(Memory memory) {
+        this.memory = memory;
+        this.memory.setPid(this.PID);
+    }
+
     @Override
     public String toString() {
-        if(end!=0)
-            return "PID = " + PID +
-                    "\nstate = " + state +
-                    "\nstatename = " + statename  +
-                    "\nmemory = " + memory +
-                    "\nneedTime = " + needTime +
-                    "\ncreateTime = " + createTime.getTime() +
-                    "\nendTime = " + endTime.getTime() +"\nstart = "+ start+"\nend = "+end+"\n";
-        else
-        return "PID = " + PID +
+        String s =  "PID = " + PID +
                 "\nstate = " + state +
-                "\nstatename = " + statename  +
-                "\nmemory = " + memory +
+                "\nmemorySize = " + memorySize +
                 "\nneedTime = " + needTime +
-                "\ncreateTime = " + createTime.getTime() +
-                "\nendTime = " + endTime.getTime();
+                "\ncreateTime = " + createTime.getTime();
+
+        if(end!=0)
+            s+= "\nstart = "+ start+"\nend = "+end;
+        if(endTime!=null)
+            s+="\nendTime = " + endTime.getTime();
+        return s;
+    }
+
+    public String toString1() {
+        String s =  "PID = " + PID +
+                "\tstate = " + state ;
+        if(this.state!=ProcessState.CREATE||this.state!=ProcessState.FINISH||this.state!=ProcessState.STOP){
+            s +="\tmemory["+start+", "+end+"]\n";
+        }
+
+        return s;
     }
 }

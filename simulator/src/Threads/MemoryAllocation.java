@@ -7,6 +7,9 @@ import entity.ProcessState;
 
 import java.util.Iterator;
 
+import static ui.mainFrame.pcbList;
+import static ui.mainFrame.whiteBroad;
+
 public class MemoryAllocation extends Thread{
 
     @Override
@@ -17,23 +20,29 @@ public class MemoryAllocation extends Thread{
                 PCB pcb = DataBuffers.createQueue.peek();
 
                 Iterator iter = DataBuffers.memoryList.iterator();
-
+                try{
                 while (iter.hasNext()){
                     Memory memory = (Memory)iter.next();
-                    if(!memory.isUse() && pcb.getMemory()<memory.getSize()){
-                        DataBuffers.memoryList.add( DataBuffers.memoryList.indexOf(memory),new Memory(
-                                memory.getStart()+ pcb.getMemory(),pcb.getEnd(), memory.getSize() -pcb.getMemory(),false));
-                        memory.setEnd(memory.getStart()+ pcb.getMemory()-1);
-                        memory.setSize(memory.getSize()- pcb.getMemory());
+                    if(!memory.isUse() && pcb.getMemorySize()<memory.getSize()){
+                        memory.setUse(true);
+                        DataBuffers.memoryList.add( DataBuffers.memoryList.indexOf(memory)+1,new Memory(
+                                memory.getStart() + pcb.getMemorySize(),memory.getEnd(),false));
+                        memory.setEnd(memory.getStart()+ pcb.getMemorySize()-1);
 
+                        //设置pcb
                         pcb.setStart(memory.getStart());
                         pcb.setEnd(memory.getEnd());
                         pcb.setState(ProcessState.READY);
+                        pcb.setMemory(memory);
+
+                        //从创建队列到就绪队列中
                         DataBuffers.createQueue.remove();
                         DataBuffers.readyQueue.add(pcb);
-                        System.out.println(pcb);
+                        whiteBroad.paint(whiteBroad.getGraphics());
                         break;
                     }
+                }}catch (Exception e){
+                    e.printStackTrace();
                 }
             }
         }

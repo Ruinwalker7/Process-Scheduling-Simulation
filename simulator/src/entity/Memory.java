@@ -5,6 +5,7 @@ public class Memory implements Comparable<Memory>{
     private int end;
     private int size;
     private boolean isUse;
+    private int pid;
 
     public boolean isUse() {
         return isUse;
@@ -14,11 +15,10 @@ public class Memory implements Comparable<Memory>{
         isUse = use;
     }
 
-
-    public Memory(int start, int end, int size,boolean isUse) {
+    public Memory(int start, int end,boolean isUse) {
         this.start = start;
         this.end = end;
-        this.size = size;
+        this.size = end - start+1;
         this.isUse = isUse;
     }
 
@@ -28,6 +28,7 @@ public class Memory implements Comparable<Memory>{
 
     public void setStart(int start) {
         this.start = start;
+        this.size =this.end - this.start+1;
     }
 
     public int getEnd() {
@@ -36,14 +37,19 @@ public class Memory implements Comparable<Memory>{
 
     public void setEnd(int end) {
         this.end = end;
+        this.size =this.end - this.start+1;
     }
 
     public int getSize() {
         return size;
     }
 
-    public void setSize(int size) {
-        this.size = size;
+    public int getPid() {
+        return pid;
+    }
+
+    public void setPid(int pid) {
+        this.pid = pid;
     }
 
     @Override
@@ -51,4 +57,19 @@ public class Memory implements Comparable<Memory>{
         return  e.size - this.size;
     }
 
+    @Override
+    public String toString() {
+        return "Memory{" +
+                "start=" + start +
+                ", end=" + end +
+                ", size=" + size +
+                ", isUse=" + isUse +
+                '}';
+    }
+    public String toString1() {
+        return "Memory[" + start +
+                ", " + end +
+                "]\tSize=" + size +
+                "\tIsUse=" + isUse+"\n";
+    }
 }

@@ -8,9 +8,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
 
 public class mainFrame extends JFrame {
     /** 进程列表 */
@@ -29,7 +29,7 @@ public class mainFrame extends JFrame {
         new MemoryAllocation().start();
         new RunningProcess().start();
 
-
+        whiteBroad.paint(whiteBroad.getGraphics());
     }
 
     public void init(){
@@ -44,9 +44,10 @@ public class mainFrame extends JFrame {
 
         memory  = new int[DataBuffers.memorySize];
         DataBuffers.readyQueue = new LinkedBlockingQueue<>();
-        DataBuffers.memoryList = new ArrayList<>();
-        DataBuffers.memoryList.add(new Memory(0,DataBuffers.memorySize-1,DataBuffers.memorySize,false));
+        DataBuffers.memoryList = new CopyOnWriteArrayList<>();
+        DataBuffers.memoryList.add(new Memory(0,DataBuffers.memorySize-1,false));
         DataBuffers.createQueue = new LinkedBlockingQueue<>();
+        DataBuffers.pcbMap = new HashMap<>();
 
 
         Font font = new Font("黑体",0,20);
@@ -82,9 +83,9 @@ public class mainFrame extends JFrame {
         cmdPane.add(cmd);
 
         //信息提示面板
-        String s = new String("内存大小："+ DataBuffers.memorySize+"\n内存调度策略："+
+        String s = new String("内存大小："+ DataBuffers.memorySize+"(kb)\n内存调度策略："+
                 DataBuffers.dispatch +"\n内存分配："+DataBuffers.memoryAllocation+"\n指令语法: \n"+
-                "creatproc 内存大小(kb) 运行时长(s)\nkillproc 进程号\niostrartproc 进程号\niofinishproc 进程号\npsproc\nmem");
+                "creatproc 内存大小(kb) 运行时长(ms)\nkillproc 进程号\niostrartproc 进程号\niofinishproc 进程号\npsproc\nmem");
         JTextArea hintlab = new JTextArea(s);
         hintlab.setFont(font);
         hintlab.setEditable(false);
@@ -115,6 +116,8 @@ public class mainFrame extends JFrame {
         pcbText.setPreferredSize(new Dimension(300,300));
         pcbPane.add(pcbText,BorderLayout.SOUTH);
 
+        pcbList.setFont(font);
+
         //可视化面板
         whiteBroad = new WhiteBroad();
         whiteBroad.setPreferredSize(new Dimension(400,100));
@@ -143,6 +146,8 @@ public class mainFrame extends JFrame {
         {
             public void mousePressed(MouseEvent e)
             {
+                if(pcbList.getSelectedValue()==null)
+                    return;
                 pcbText.setText(((PCB)pcbList.getSelectedValue()).toString());
             }
         });
@@ -158,15 +163,21 @@ public class mainFrame extends JFrame {
                 resultArea.setText("指令无法被解析");
             }else creatproc(argc[1],argc[2]);
         }else if(argc[0].equals("killproc")){
-            resultArea.setText(" ");
+            if(argc.length!=2){
+                resultArea.setText("指令无法被解析");
+            }else killproc(argc[1]);
         }else if(argc[0].equals("iostrartproc")){
-            resultArea.setText(" ");
+            if(argc.length!=2){
+                resultArea.setText("指令无法被解析");
+            }else iostrartproc(argc[1]);
         }else if(argc[0].equals("iofinishproc")){
-            resultArea.setText(" ");
+            if(argc.length!=2){
+                resultArea.setText("指令无法被解析");
+            }else iofinishproc(argc[1]);
         }else if(argc[0].equals("psproc")){
-            resultArea.setText(" ");
+            psproc();
         }else if(argc[0].equals("mem")){
-            resultArea.setText(" ");
+            mem();
         }else if(argc[0].equals("")){
             resultArea.setText(" ");
         }else{
@@ -187,6 +198,64 @@ public class mainFrame extends JFrame {
         cmdField.setText("");
     }
 
+    private void mem() {
+        resultArea.setText("");
+        for(int i=0;i<DataBuffers.memoryList.size();i++){
+            resultArea.append(DataBuffers.memoryList.get(i).toString1());
+        }
+    }
+
+    private void psproc() {
+        resultArea.setText("");
+        for(int i=0;i<DataBuffers.pcbListModel.getSize();i++){
+            PCB pcb = (PCB) DataBuffers.pcbListModel.getElementAt(i);
+            resultArea.append(pcb.toString1());
+        }
+
+    }
+
+    private void iostrartproc(String s) {
+        int m=0;
+        try{
+            m=Integer.valueOf(s);
+        }catch (Exception e){
+            resultArea.setText("指令无法被解析");
+            return;
+        }
+        if(DataBuffers.pcbMap.containsKey(m)){
+            PCB pcb = DataBuffers.pcbMap.get(m);
+            if(pcb.getState()==ProcessState.RUNNING){
+                pcb.setState(ProcessState.BLOCK);
+                resultArea.setText("进程"+m+"已经被阻塞!\n");
+            }
+            else
+                resultArea.setText("该进程无法被阻塞!\n");
+        }else
+            resultArea.setText("没有该进程!\n");
+    }
+
+    private void iofinishproc(String s) {
+        int m=0;
+        try{
+            m=Integer.valueOf(s);
+        }catch (Exception e){
+            resultArea.setText("指令无法被解析");
+            return;
+        }
+        if(DataBuffers.pcbMap.containsKey(m)){
+            PCB pcb = DataBuffers.pcbMap.get(m);
+            if(pcb.getState()==ProcessState.BLOCK){
+                pcb.setState(ProcessState.READY);
+                DataBuffers.readyQueue.add(pcb);
+                resultArea.setText("进程"+m+"已经被唤醒!\n");
+            }
+            else
+                resultArea.setText("该进程无法被唤醒!\n");
+        }else
+            resultArea.setText("没有该进程!\n");
+
+    }
+
     public void creatproc(String memory,String time){
         int m=0,t=0;
         try{
@@ -196,9 +265,35 @@ public class mainFrame extends JFrame {
             resultArea.setText("指令无法被解析");
             return;
         }
+        if(m>DataBuffers.memorySize){
+            resultArea.setText("该任务内存需求大于系统内存数量，无法创建！");
+            return;
+        }
         PCB pcb = new PCB(m,t);
         DataBuffers.pcbListModel.addElement(pcb);
         DataBuffers.createQueue.add(pcb);
+        DataBuffers.pcbMap.put(pcb.getPID(),pcb);
         resultArea.setText("进程创建成功!\n"+pcb.toString());
+    }
+
+    public void killproc(String pid){
+        int m=0;
+        try{
+            m=Integer.valueOf(pid);
+        }catch (Exception e){
+            resultArea.setText("指令无法被解析");
+            return;
+        }
+       if(DataBuffers.pcbMap.containsKey(m)){
+           PCB pcb = DataBuffers.pcbMap.get(m);
+           if(pcb.getState()!=ProcessState.FINISH){
+               pcb.setState(ProcessState.STOP);
+               resultArea.setText("进程"+pid+"已经被撤销!\n");
+           }
+           else
+               resultArea.setText("该进程已经被撤销!\n");
+       }else
+           resultArea.setText("没有该进程!\n");
+
     }
 }
